@@ -22,6 +22,7 @@ use strncasecmp;
 class HordeReconfigureFlow
 {
     private FlowIoInterface $io;
+
     /**
      * Modes: symlink, copy
      */
@@ -75,9 +76,10 @@ class HordeReconfigureFlow
         }
         $outputInterface = $output ?? new SymphonyOutputAdapter(ComposerFactory::createOutput());
         $tree->withVendorDir($vendorDir);
-        $flow = new HordeReconfigureFlow($tree, $outputInterface, $options);
-        return $flow;
+
+        return new HordeReconfigureFlow($tree, $outputInterface, $options);
     }
+
     /**
      * Run the reconfigure flow
      */
@@ -96,31 +98,8 @@ class HordeReconfigureFlow
         $vendorDir = $this->tree->getVendorDir();
         if ($this->options->force) {
             $this->io->writeln('Force mode enabled, removing existing files');
-            // Todo: Delegate to a method or helper class
-            foreach ($hordeApps as $app) {
-                [$vendorName, $appName] = explode('/', $app);
-                // horde.local.php files
-                $filesystem->remove($this->tree->getVarConfigDir() . '/' . $appName . '/horde.local.php');
-                $filesystem->remove($vendorDir . '/' . $vendorName . '/' . $appName . '/config/horde.local.php');
-                if ($app == 'horde') {
-                    // remove horde registry file
-                    $filesystem->remove($this->tree->getVarConfigDir() . '/horde/registry.d/00-horde.php');
-                    $filesystem->remove($this->tree->getVarConfigDir() . '/horde/registry.d/01-location-' . $appName . '.php');
-                } else {
-                    // remove app registry file
-                    $filesystem->remove($this->tree->getVarConfigDir() . '/horde/registry.d/02-location-' . $appName . '.php');
-                }
-                // remove webdir items
-                $filesystem->remove($this->tree->getWebReadableRootDir() . '/' . $appName);
-                $filesystem->remove($this->tree->getWebReadableRootDir() . '/js/' . $appName);
-                $filesystem->remove($this->tree->getWebReadableRootDir() . '/themes/' . $appName);
-                // remove vendor dir items
-                $filesystem->remove($vendorDir . '/' . $vendorName . '/' . $appName . '/config/conf.php');
-                $filesystem->remove($vendorDir . '/' . $vendorName . '/' . $appName . '/config/hooks.php');
-                $filesystem->remove($vendorDir . '/' . $vendorName . '/' . $appName . '/config/backends.local.php');
-                $filesystem->remove($vendorDir . '/' . $vendorName . '/' . $appName . '/config/prefs.local.php');
-                $filesystem->remove($vendorDir . '/' . $vendorName . '/' . $appName . '/config/routes.local.php');
-            }
+            $removeHandler = new ExistingFilesRemover($this->tree, $filesystem, $hordeApps);
+            $removeHandler->run();
         } else {
             $this->io->writeln('Force mode not enabled, skipping removal of existing files');
         }
