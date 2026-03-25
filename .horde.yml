@@ -11,7 +11,7 @@ description: >-
   bootstrap process.
 list: dev
 type: composer-plugin
-homepage: https://github.com/horde/horde-installer-plugin
+homepage: https://github.com/horde6/horde-installer-plugin
 authors:
   -
     name: Ralf Lang
@@ -44,4 +44,4 @@ autoload:
     Horde\Composer\: src/
 extra:
   class: Horde\Composer\HordeInstallerPlugin
-vendor: horde
+vendor: horde6

@@ -1,8 +1,11 @@
 {
-    "name": "horde/horde-installer-plugin",
+    "name": "horde6/horde-installer-plugin",
+    "replace": {
+        "horde/horde-installer-plugin": "dev-FRAMEWORK_6_0 || ^3 || ^2"
+    },
     "description": "Horde Installer Plugin for Composer",
     "type": "composer-plugin",
-    "homepage": "https://github.com/horde/horde-installer-plugin",
+    "homepage": "https://github.com/horde6/horde-installer-plugin",
     "license": "MIT",
     "authors": [
         {
@@ -40,7 +43,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-FRAMEWORK_6_0": "3.x-dev"
+            "dev-H6": "3.x-dev"
         },
         "class": "Horde\\Composer\\HordeInstallerPlugin"
     }
