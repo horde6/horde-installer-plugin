@@ -4,31 +4,10 @@ declare(strict_types=1);
 
 namespace Horde\Composer;
 
-use DirectoryIterator;
 use ErrorException;
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
 
 class JsTreeLinker
 {
-    private Filesystem $filesystem;
-    private string $vendorDir;
-    private string $webDir;
-    private string $jsDir;
-    /**
-     * List of apps
-     *
-     * @var string[]
-     */
-    private array $apps;
-    /**
-     * List of libraries
-     *
-     * @var string[]
-     */
-    private array $libs;
-    private string $mode = 'proxy';
-
     /**
      * Constructor
      *
@@ -36,21 +15,15 @@ class JsTreeLinker
      * @param DirectoryTree $tree
      * @param string[] $apps
      * @param string[] $libs
+     * @param string $mode
      */
     public function __construct(
-        Filesystem $filesystem,
-        DirectoryTree $tree,
-        array $apps = [],
-        array $libs = [],
-        string $mode = 'proxy'
+        private DirectoryTree $tree,
+        private Filesystem $filesystem,
+        private array $apps = [],
+        private array $libs = [],
+        private string $mode = 'proxy'
     ) {
-        $this->filesystem = $filesystem;
-        $this->vendorDir = $tree->getVendorDir();
-        $this->webDir = $tree->getWebReadableRootDir();
-        $this->jsDir = $this->webDir . '/js';
-        $this->apps = $apps;
-        $this->libs = $libs;
-        $this->mode = $mode;
     }
     /**
      * Build the web/js/ symlink tree
@@ -71,27 +44,37 @@ class JsTreeLinker
      */
     public function run(): void
     {
-        $this->filesystem->ensureDirectoryExists($this->jsDir);
+        $tree = $this->tree;
+        $webDir = $this->tree->getWebReadableRootDir();
+        $jsDir = $webDir . '/js';
+
+        $this->filesystem->ensureDirectoryExists($jsDir);
+
         // app javascript dirs are exposed under js/$app
         foreach ($this->apps as $app) {
             [$vendor, $name] =  explode('/', $app, 2);
-            $appPath = $this->vendorDir . '/' . $vendor . '/' . $name;
+            $appPath = $tree->getVendorPackageDir($vendor, $name);
+
             $jsSourcePath = $appPath . '/js';
             if (!$this->filesystem->isReadable($jsSourcePath)) {
                 continue;
             }
-            $targetDir = $this->jsDir . '/' . $name;
+
+            $targetDir = $jsDir . '/' . $name;
             $this->linkDir($jsSourcePath, $targetDir);
         }
+
         // Library javascript dirs are exposed under js/horde/
+        $targetDir = $jsDir . '/horde';
         foreach ($this->libs as $lib) {
             [$vendor, $name] =  explode('/', $lib, 2);
-            $libraryPath = $this->vendorDir . '/' . $vendor . '/' . $name;
+            $libraryPath = $tree->getVendorPackageDir($vendor, $name);
+
             $jsSourcePath = $libraryPath . '/js';
             if (!$this->filesystem->isReadable($jsSourcePath)) {
                 continue;
             }
-            $targetDir = $this->jsDir . '/horde';
+
             $this->linkDir($jsSourcePath, $targetDir);
         }
     }
@@ -108,21 +91,22 @@ class JsTreeLinker
         } catch (ErrorException $errorException) {
             return;
         }
+
+        $link = in_array($this->mode, ['symlink', 'proxy']);
         while (false !== ($sourceItem = readdir($sourceDirHandle))) {
             if ($sourceItem == '.' || $sourceItem == '..') {
                 continue;
             }
+
             $sourceFile = $sourceDir . '/' . $sourceItem;
             $targetFile = $targetDir . '/' . $sourceItem;
-            if (in_array($this->mode, ['symlink', 'proxy'])) {
+
+            if ($link) {
                 $this->filesystem->relativeSymlink($sourceFile, $targetFile);
-            } else {
-                if (is_file($sourceFile)) {
-                    copy($sourceFile, $targetFile);
-                }
-                if (is_dir($sourceFile)) {
-                    $this->linkDir($sourceFile, $targetFile);
-                }
+            } elseif (is_file($sourceFile)) {
+                copy($sourceFile, $targetFile);
+            } elseif (is_dir($sourceFile)) {
+                $this->linkDir($sourceFile, $targetFile);
             }
         }
         closedir($sourceDirHandle);

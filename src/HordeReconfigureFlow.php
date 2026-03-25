@@ -137,8 +137,8 @@ class HordeReconfigureFlow
 
         $this->io->writeln('Linking javascript tree to /web/js');
         $jsLinker = new JsTreeLinker(
-            $filesystem,
             $this->tree,
+            $filesystem,
             $hordeApps,
             $hordeLibraries,
             $mode,
