@@ -22,7 +22,6 @@ use strncasecmp;
 class HordeReconfigureFlow
 {
     private FlowIoInterface $io;
-
     /**
      * Modes: symlink, copy
      */
@@ -79,7 +78,6 @@ class HordeReconfigureFlow
 
         return new HordeReconfigureFlow($tree, $outputInterface, $options);
     }
-
     /**
      * Run the reconfigure flow
      */
@@ -96,6 +94,7 @@ class HordeReconfigureFlow
         // We could simply ask InstalledVersions here, too
         $rootPackageDir = $this->tree->getRootPackageDir();
         $vendorDir = $this->tree->getVendorDir();
+
         if ($this->options->force) {
             $this->io->writeln('Force mode enabled, removing existing files');
             $removeHandler = new ExistingFilesRemover($this->tree, $filesystem, $hordeApps);
@@ -103,15 +102,18 @@ class HordeReconfigureFlow
         } else {
             $this->io->writeln('Force mode not enabled, skipping removal of existing files');
         }
+
         $this->io->writeln('Applying /presets for absent files in /var/config');
         $presetHandler = new PresetHandler($rootPackageDir, $filesystem);
         $presetHandler->handle();
+
         $this->io->writeln('Looking for registry snippets from apps');
         $snippetHandler = new PackageDocRegistrySnippetHandler(
             $this->tree,
             $filesystem,
         );
         $snippetHandler->handle();
+
         $this->io->writeln('Configuration mode: ' . $mode);
         $this->io->writeln('Writing app configs to /var/config dir');
         $registrySnippetFileWriter = new RegistrySnippetFileWriter(
@@ -128,9 +130,11 @@ class HordeReconfigureFlow
             $mode,
         );
         $hordeLocalWriter->run();
+
         $this->io->writeln('Linking app configs to /web Dir');
         $configLinker = new ConfigLinker($rootPackageDir, $mode, $this->io);
         $configLinker->run();
+
         $this->io->writeln('Linking javascript tree to /web/js');
         $jsLinker = new JsTreeLinker(
             $filesystem,
@@ -142,9 +146,8 @@ class HordeReconfigureFlow
         $jsLinker->run();
         $this->io->writeln('Linking themes tree to /web/themes');
         $themesHandler = new ThemesHandler(
+            $this->tree,
             $filesystem,
-            $rootPackageDir,
-            $vendorDir,
             $mode,
         );
 
@@ -158,13 +161,16 @@ class HordeReconfigureFlow
             );
         }
         $themesHandler->setupThemes();
+
         // ApplicationLinker must run after all changes to /vendor
         $appLinker = new ApplicationLinker($filesystem, $hordeApps, $rootPackageDir, $mode);
         $appLinker->run();
+
         // Clean up obsolete PHP files from web/ dirs (after routing migrations)
         $this->io->writeln('Cleaning up obsolete web files');
         $webFilesCleaner = new ObsoleteWebFilesCleaner($hordeApps, $rootPackageDir, $this->io);
         $webFilesCleaner->run();
+
         return 0;
     }
 }

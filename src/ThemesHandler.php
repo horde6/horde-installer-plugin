@@ -16,38 +16,22 @@ use Exception;
 class ThemesHandler
 {
     /**
-     * Filesystem API
-     * @var Filesystem
-     */
-    protected $filesystem;
-
-    /**
-     * The root package's dir
-     * @var string
-     */
-    protected string $rootDir;
-    protected string $vendorDir;
-
-    /**
      * @var ThemesCatalog
      */
-    public $themesCatalog;
+    public ThemesCatalog $themesCatalog;
 
     protected string $themesDir;
 
     private string $mode = 'proxy';
 
     public function __construct(
-        Filesystem $filesystem,
-        string $rootDir,
-        string $vendorDir,
+        private DirectoryTree $tree,
+        private Filesystem $filesystem,
         string $mode = 'proxy'
     ) {
-        $this->filesystem = $filesystem;
-        $this->rootDir = $rootDir;
-        $this->vendorDir = $vendorDir;
-        $this->themesDir = $rootDir . '/web/themes/';
-        $this->themesCatalog = new ThemesCatalog($rootDir);
+        $tree = $this->tree;
+        $this->themesDir = $tree->getThemesDir();
+        $this->themesCatalog = new ThemesCatalog($tree->getRootPackageDir());
         $this->mode = $mode;
     }
 
@@ -69,7 +53,7 @@ class ThemesHandler
      */
     public function setupDefaultTheme(): void
     {
-        $vendorDir = new DirectoryIterator($this->vendorDir);
+        $vendorDir = new DirectoryIterator($this->tree->getVendorDir());
         // Consider all vendors, not just "horde" - on purpose
         foreach ($vendorDir as $vendor) {
             $vendorName = $vendor->getFileName();
