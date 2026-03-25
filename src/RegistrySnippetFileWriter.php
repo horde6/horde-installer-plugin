@@ -88,31 +88,32 @@ $app_webroot = \'%s\';
             . ' */' . PHP_EOL;
 
             $appInVendorDir = $tree->getVendorPackageDir($appVendor, $appName);
+
+            $application = '$this->applications[\'' . $appName . '\']';
+            $registryAppSnippet
+                .= $application . "['fileroot'] = '$appInVendorDir/';\n"
+                . $application . "['templates'] = '$appInVendorDir/templates/';\n"
+                . $application . "['webroot'] = '$webrootUri$appName/';\n"
+                . $application . "['themesuri'] = '$webrootUri" . "themes/$appName';\n"
+                . $application . "['jsuri'] = '$webrootUri". "js/$appName';\n";
+
             if ($appName == 'horde') {
-                $registryAppFilename = $configRegistryDir . '/01-location-' . $appName . '.php';
+                $order = '01';
                 $registryAppSnippet
-                .= '$this->applications[\'' . $appName . '\'][\'fileroot\'] = \'' . $appInVendorDir . '\';' . PHP_EOL
-                . '$this->applications[\'' . $appName . '\'][\'templates\'] = \'' . $appInVendorDir . 'templates' . DIRECTORY_SEPARATOR . '\';' . PHP_EOL
-                . "\$this->applications['horde']['webroot'] = '{$webrootUri}horde/';" . PHP_EOL
-                . '$this->applications[\'horde\'][\'jsfs\'] = $deployment_fileroot . \'/js/horde/\';' . PHP_EOL
-                . "\$this->applications['horde']['jsuri'] = '{$webrootUri}js/horde';" . PHP_EOL
-                . '$this->applications[\'horde\'][\'staticfs\'] = $deployment_fileroot . \'/static\';' . PHP_EOL
-                . "\$this->applications['horde']['staticuri'] = '{$webrootUri}static/';" . PHP_EOL
-                . '$this->applications[\'horde\'][\'themesfs\'] = $deployment_fileroot . \'/themes/horde/\';' . PHP_EOL
-                . "\$this->applications['horde']['themesuri'] = '{$webrootUri}themes/horde';" . PHP_EOL;
+                    .= $application . "['staticuri'] = '{$webrootUri}static/';\n"
+                    . $application . "['themesfs'] = \$deployment_fileroot . '/themes/horde/';\n"
+                    . $application . "['jsfs'] = \$deployment_fileroot . '/js/horde/';\n"
+                    . $application . "['staticfs'] = \$deployment_fileroot . '/static';\n";
             } else {
                 // A registry snippet should ensure the install dir is known
-                $registryAppFilename = $configRegistryDir . '/02-location-' . $appName . '.php';
+                $order = '02';
                 $registryAppSnippet
-                .= '$this->applications[\'' . $appName . '\'][\'fileroot\'] = \'' . $appInVendorDir . '\';' . PHP_EOL
-                . '$this->applications[\'' . $appName . '\'][\'templates\'] = \'' . $appInVendorDir . 'templates' . DIRECTORY_SEPARATOR . '\';' . PHP_EOL
-                . '$this->applications[\'' . $appName . '\'][\'themesfs\'] = \'' . $webDir . DIRECTORY_SEPARATOR . 'themes' . DIRECTORY_SEPARATOR . $appName . DIRECTORY_SEPARATOR . '\';' . PHP_EOL
-                . '$this->applications[\'' . $appName . '\'][\'jsfs\'] = \'' . $webDir . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . $appName . DIRECTORY_SEPARATOR . '\';' . PHP_EOL
-                . "\$this->applications['$appName']['webroot'] = '{$webrootUri}$appName/';" . PHP_EOL
-                . "\$this->applications['$appName']['jsuri'] = '{$webrootUri}js/$appName';" . PHP_EOL
-                . "\$this->applications['$appName']['themesuri'] = '{$webrootUri}themes/$appName';" . PHP_EOL
-                . '// End of ' . $appName . ' registry snippet' . PHP_EOL;
+                    .= $application . "['themesfs'] = '$webDir/themes/$appName/';\n"
+                    . $application . "['jsfs'] = '$webDir/js/$appName/';\n"
+                    . "// End of $appName registry snippet\n";
             }
+
+            $registryAppFilename = $configRegistryDir . '/' . $order . '-location-' . $appName . '.php';
 
             // Some versions of the middleware router require the routes.php file to exist even if empty
             $routesFilePath = $appInVendorDir . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'routes.php';
