@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Horde\Composer;
 
 use Composer\InstalledVersions;
-use Composer\Util\Filesystem;
 use DirectoryIterator;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;

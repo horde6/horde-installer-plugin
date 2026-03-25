@@ -12,7 +12,6 @@ namespace Horde\Composer;
 use Composer\InstalledVersions;
 use Composer\PartialComposer;
 use Composer\Composer;
-use Composer\Util\Filesystem;
 use Composer\Factory as ComposerFactory;
 use Horde\Composer\IOAdapter\FlowIoInterface;
 use Symfony\Component\Console\Output\OutputInterface;
