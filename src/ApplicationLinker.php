@@ -52,6 +52,61 @@ class ApplicationLinker
         $this->filesystem->ensureDirectoryExists($webDir);
         // Ensure we have a static dir for ephemeral, generated files ...
         $this->filesystem->ensureDirectoryExists($webDir . '/static');
+
+        if ($this->mode == 'proxy') {
+            // This list is different from the one for the linker
+            $files = [
+                '.gitignore',
+                '.gitattributes',
+                'README.rst',
+                'README',
+                'LICENSE',
+                'phpunit.xml',
+                'phpunit.xml.dist',
+                'composer.json',
+            ];
+            $dirs = [
+                'bin',
+                'lib',
+                'src',
+                '.git',
+                '.github',
+                'doc',
+                'js',
+                'script',
+                'scripts',
+                'static',
+                'config',
+                'locale',
+                'themes',
+                'templates',
+                //'vendor',
+                'test',
+                'tests',
+                'migration',
+                'migrations',
+                'examples',
+            ];
+        } else {
+            // Items we won't copy or link to the web tree
+            $files = [
+                'LICENSE', 'composer.json', 'composer.lock', '.gitattributes',
+                '.horde.yml', '.travis.yml', 'package.xml', 'phpunit.xml.dist',
+                '.gitignore', 'README.rst', 'README.md', 'README', 'CHANGELOG.md',
+                '.php-cs-fixer.dist.php', '.php-cs-fixer.cache', 'phpunit.xml',
+            ];
+            $dirs = [
+                'doc',
+                'test',
+                'bin',
+                'script',
+                'scripts',
+                'static', // static should be ensured to exist in webdir.
+                '.git',
+                '.github',
+            ];
+        }
+
         // TODO: Move implementations to separate classes
         foreach ($this->appPackages as $app) {
             if ($app === 'horde/components') {
@@ -60,32 +115,15 @@ class ApplicationLinker
             $appVendorDir = $vendorDir . '/' . $app;
             [$vendor, $appName] = explode('/', $app);
             $appWebDir = $webDir . '/' . $appName;
+
             // abort if the app isn't actually there
             if (!is_dir($appVendorDir) || !is_readable($appVendorDir)) {
                 // TODO: Consume IO object and warn
                 continue;
             }
+
             // create the app's main dir in the web/ tree
             $this->filesystem->ensureDirectoryExists($appWebDir);
-            // Items we won't copy or link to the web tree
-            $filterList = [
-                'files' => [
-                    'LICENSE', 'composer.json', 'composer.lock', '.gitattributes',
-                    '.horde.yml', '.travis.yml', 'package.xml', 'phpunit.xml.dist',
-                    '.gitignore', 'README.rst', 'README.md', 'README', 'CHANGELOG.md',
-                    '.php-cs-fixer.dist.php', '.php-cs-fixer.cache', 'phpunit.xml',
-                ],
-                'dirs' => [
-                    'doc',
-                    'test',
-                    'bin',
-                    'script',
-                    'scripts',
-                    'static', // static should be ensured to exist in webdir.
-                    '.git',
-                    '.github',
-                ],
-            ];
 
             if ($this->mode === 'symlink') {
                 // create links to the app's subdirs and files in the web/ tree, omitting select dirs and files
@@ -93,67 +131,18 @@ class ApplicationLinker
                     if ($appFileInfo->isDot()) {
                         continue;
                     }
+
                     $name = $appFileInfo->getFilename();
-                    if ($appFileInfo->isDir()) {
-                        if (in_array(
-                            $name,
-                            $filterList['dirs']
-                        )) {
-                            continue;
-                        }
-                        $this->filesystem->relativeSymlink(
-                            $appVendorDir . '/' . $name,
-                            $appWebDir . '/' . $name
-                        );
-                    }
-                    if (in_array(
-                        $name,
-                        $filterList['files']
-                    )) {
+                    if (in_array($name, $appFileInfo->isDir() ? $dirs : $files)) {
                         continue;
                     }
+
                     $this->filesystem->relativeSymlink(
                         $appVendorDir . '/' . $name,
                         $appWebDir . '/' . $name
                     );
                 }
             } elseif ($this->mode == 'proxy') {
-                // This list is different from the one for the linker
-                $filterList = [
-
-                    'files' => [
-                        '.gitignore',
-                        '.gitattributes',
-                        'README.rst',
-                        'README',
-                        'LICENSE',
-                        'phpunit.xml',
-                        'phpunit.xml.dist',
-                        'composer.json',
-                    ],
-                    'dirs' => [
-                        'bin',
-                        'lib',
-                        'src',
-                        '.git',
-                        '.github',
-                        'doc',
-                        'js',
-                        'script',
-                        'scripts',
-                        'static',
-                        'config',
-                        'locale',
-                        'themes',
-                        'templates',
-                        'vendor',
-                        'test',
-                        'tests',
-                        'migration',
-                        'migrations',
-                        'examples',
-                    ],
-                ];
                 $this->filesystem->emptyDirectory($appWebDir, true);
                 // We are already per-app
                 // appWebDir and appVendorDir are already set
@@ -170,13 +159,13 @@ class ApplicationLinker
                     // Skip subpaths of the filtered dirs
                     if (in_array(
                         $split[0],
-                        $filterList['dirs']
+                        $dirs
                     )) {
                         continue;
                     }
                     if (in_array(
                         $name,
-                        $filterList['files']
+                        $files
                     )) {
                         continue;
                     }
@@ -219,7 +208,7 @@ class ApplicationLinker
                     );
                 } // EndForEach File
             } else {
-                $copy = new RecursiveCopy($appVendorDir, $appWebDir, array_merge($filterList['files'], $filterList['dirs']));
+                $copy = new RecursiveCopy($appVendorDir, $appWebDir, array_merge($files, $dirs));
                 $copy->copy();
             }
         } // EndForEach App
