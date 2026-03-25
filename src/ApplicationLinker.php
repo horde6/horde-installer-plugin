@@ -90,10 +90,8 @@ class ApplicationLinker
         } else {
             // Items we won't copy or link to the web tree
             $files = [
-                'LICENSE', 'composer.json', 'composer.lock', '.gitattributes',
-                '.horde.yml', '.travis.yml', 'package.xml', 'phpunit.xml.dist',
-                '.gitignore', 'README.rst', 'README.md', 'README', 'CHANGELOG.md',
-                '.php-cs-fixer.dist.php', '.php-cs-fixer.cache', 'phpunit.xml',
+                'LICENSE', 'composer.json', 'composer.lock', 'package.xml', 'phpunit.xml.dist',
+                'README.rst', 'README.md', 'README', 'CHANGELOG.md', 'phpunit.xml',
             ];
             $dirs = [
                 'doc',
@@ -102,8 +100,6 @@ class ApplicationLinker
                 'script',
                 'scripts',
                 'static', // static should be ensured to exist in webdir.
-                '.git',
-                '.github',
             ];
         }
 
@@ -133,6 +129,10 @@ class ApplicationLinker
                     }
 
                     $name = $appFileInfo->getFilename();
+                    if (substr($name, 0, 1) === '.') {
+                        continue;
+                    }
+
                     if (in_array($name, $appFileInfo->isDir() ? $dirs : $files)) {
                         continue;
                     }
