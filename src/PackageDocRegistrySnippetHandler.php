@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Horde\Composer;
 
-use Directory;
 use DirectoryIterator;
 
 /**
@@ -18,21 +17,14 @@ use DirectoryIterator;
  */
 class PackageDocRegistrySnippetHandler
 {
-    private Filesystem $filesystem;
-    private DirectoryTree $tree;
-    private string $configRegistryDir;
-
     /**
      * Constructor
      *
      * @param DirectoryTree $tree
      * @param Filesystem $filesystem
      */
-    public function __construct(DirectoryTree $tree, Filesystem $filesystem)
+    public function __construct(private DirectoryTree $tree, private Filesystem $filesystem)
     {
-        $this->tree = $tree;
-        $this->configRegistryDir = $this->tree->getVarConfigDir() . '/horde/registry.d';
-        $this->filesystem = $filesystem;
     }
 
     /**
@@ -44,7 +36,9 @@ class PackageDocRegistrySnippetHandler
      */
     public function handle(): void
     {
-        $this->filesystem->ensureDirectoryExists($this->configRegistryDir);
+        $configRegistryDir = $this->tree->getVarConfigDir() . '/horde/registry.d';
+
+        $this->filesystem->ensureDirectoryExists($configRegistryDir);
         foreach ($this->tree->getVendors() as $vendor) {
             $vendorDir = $this->tree->getVendorSpecificDir($vendor);
             foreach ($this->tree->getPackagesByVendor($vendor) as $package) {
@@ -56,7 +50,7 @@ class PackageDocRegistrySnippetHandler
                 $files = new DirectoryIterator($sourceDir);
                 foreach ($files as $entry) {
                     if ($files->isFile()) {
-                        copy($files->getPathName(), $this->configRegistryDir . '/' . $entry);
+                        copy($files->getPathName(), $configRegistryDir . '/' . $entry);
                     }
                 }
             }
