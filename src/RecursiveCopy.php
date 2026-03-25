@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Horde\Composer;
 
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
 use FilesystemIterator;
 use SplFileInfo;
 
@@ -90,5 +88,4 @@ class RecursiveCopy
             }
         }
     }
-
 }

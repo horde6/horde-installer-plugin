@@ -8,34 +8,37 @@ use DirectoryIterator;
 
 class PresetHandler
 {
-    private string $presetDir;
-    private string $configDir;
-    private Filesystem $filesystem;
-
-    public function __construct(string $rootDir, Filesystem $filesystem)
+    public function __construct(private DirectoryTree $tree, private Filesystem $filesystem, private array $appPackages)
     {
-        $this->presetDir = $rootDir . '/presets';
-        $this->configDir = $rootDir . '/var/config';
-        $this->filesystem = $filesystem;
     }
+
     public function handle(): void
     {
+        $tree = $this->tree;
+        $presetDir = $tree->getPresetDir();
+
         // If a deployment has a preset dir copy files from preset
-        if (!is_dir($this->presetDir)) {
+        if (!is_dir($presetDir)) {
             return;
         }
-        // TODO: Do we need a RecursiveDirectoryInterator here?
-        $presetDirIterator = new DirectoryIterator($this->presetDir);
-        foreach ($presetDirIterator as $presetAppDir) {
-            if (!$presetAppDir->isDir() || $presetAppDir->isDot()) {
-                continue;
+
+        $configDir = $tree->getVarConfigDir();
+
+        foreach ($this->appPackages as $app) {
+            [$vendor, $name] = explode('/', $app);
+
+            $presetAppDir = $presetDir . '/' . $name;
+            if (!is_dir($presetAppDir)) {
+               continue;
             }
-            $app = $presetAppDir->getFilename();
-            $configAppDir = $this->configDir . '/' . $app;
+
+            $configAppDir = $configDir . '/' . $name;
+
             // ensure the corresponding configAppDir exists
             $this->filesystem->ensureDirectoryExists($configAppDir);
+
             // Create an iterator for the presetAppDir
-            $appDirIterator = new DirectoryIterator($presetAppDir->getPathname());
+            $appDirIterator = new DirectoryIterator($presetAppDir);
             foreach ($appDirIterator as $configFile) {
                 if (!$configFile->isFile()) {
                     continue;

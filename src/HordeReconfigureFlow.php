@@ -104,31 +104,18 @@ class HordeReconfigureFlow
         }
 
         $this->io->writeln('Applying /presets for absent files in /var/config');
-        $presetHandler = new PresetHandler($rootPackageDir, $filesystem);
+        $presetHandler = new PresetHandler($this->tree, $filesystem, $hordeApps);
         $presetHandler->handle();
 
         $this->io->writeln('Looking for registry snippets from apps');
-        $snippetHandler = new PackageDocRegistrySnippetHandler(
-            $this->tree,
-            $filesystem,
-        );
+        $snippetHandler = new PackageDocRegistrySnippetHandler($this->tree, $filesystem);
         $snippetHandler->handle();
 
         $this->io->writeln('Configuration mode: ' . $mode);
         $this->io->writeln('Writing app configs to /var/config dir');
-        $registrySnippetFileWriter = new RegistrySnippetFileWriter(
-            $this->tree,
-            $filesystem,
-            $hordeApps,
-            $this->options,
-        );
+        $registrySnippetFileWriter = new RegistrySnippetFileWriter($this->tree, $filesystem, $hordeApps, $this->options);
         $registrySnippetFileWriter->run();
-        $hordeLocalWriter = new HordeLocalFileWriter(
-            $filesystem,
-            $rootPackageDir,
-            $hordeApps,
-            $mode,
-        );
+        $hordeLocalWriter = new HordeLocalFileWriter($this->tree, $filesystem, $hordeApps, $mode);
         $hordeLocalWriter->run();
 
         $this->io->writeln('Linking app configs to /vendor Dir');
@@ -136,20 +123,11 @@ class HordeReconfigureFlow
         $configLinker->run();
 
         $this->io->writeln('Linking javascript tree to /web/js');
-        $jsLinker = new JsTreeLinker(
-            $this->tree,
-            $filesystem,
-            $hordeApps,
-            $hordeLibraries,
-            $mode,
-        );
+        $jsLinker = new JsTreeLinker($this->tree, $filesystem, $hordeApps, $hordeLibraries, $mode);
         $jsLinker->run();
+
         $this->io->writeln('Linking themes tree to /web/themes');
-        $themesHandler = new ThemesHandler(
-            $this->tree,
-            $filesystem,
-            $mode,
-        );
+        $themesHandler = new ThemesHandler($this->tree, $filesystem, $mode);
 
         foreach ($hordeThemes as $theme) {
             // register
