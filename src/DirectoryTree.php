@@ -5,10 +5,7 @@ declare(strict_types=1);
 namespace Horde\Composer;
 
 use DirectoryIterator;
-use ErrorException;
 use Exception;
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
 
 class DirectoryTree
 {
@@ -154,5 +151,10 @@ class DirectoryTree
     public function getPresetDir(): string
     {
         return $this->presetDir ?? $this->getRootPackageDir() . '/presets';
+    }
+
+    public function getThemesDir(): string
+    {
+        return $this->getWebReadableRootDir() . '/themes';
     }
 }
