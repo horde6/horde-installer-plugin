@@ -117,8 +117,8 @@ class HordeReconfigureFlow
         $this->io->writeln('Configuration mode: ' . $mode);
         $this->io->writeln('Writing app configs to /var/config dir');
         $registrySnippetFileWriter = new RegistrySnippetFileWriter(
+            $this->tree,
             $filesystem,
-            $rootPackageDir,
             $hordeApps,
             $this->options,
         );
